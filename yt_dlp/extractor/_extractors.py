@@ -934,6 +934,8 @@ from .khanacademy import (
     KhanAcademyUnitIE,
 )
 from .kick import (
+    KickChannelClipsIE,
+    KickChannelVODsIE,
     KickClipIE,
     KickIE,
     KickVODIE,

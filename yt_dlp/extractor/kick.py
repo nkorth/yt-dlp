@@ -12,6 +12,7 @@ from ..utils import (
     traverse_obj,
     unified_timestamp,
     url_or_none,
+    urljoin,
 )
 
 
@@ -256,3 +257,47 @@ class KickClipIE(KickBaseIE):
                 'age_limit': ('is_mature', {bool}, {lambda x: 18 if x else 0}),
             }),
         }
+
+
+class KickChannelVODsIE(KickBaseIE):
+    IE_NAME = 'kick:channel:vod'
+    _VALID_URL = r'https?://(?:www\.)?kick\.com/(?P<id>[\w-]+)/videos'
+    _TESTS = [{
+        'url': 'https://kick.com/xqc/videos',
+        'playlist_mincount': 24,
+        'info_dict': {
+            'id': 'xqc',
+        },
+    }]
+
+    def _real_extract(self, url):
+        channel = self._match_id(url)
+        response = self._call_api(f'v2/channels/{channel}/videos', channel)
+        entries = [
+            self.url_result(
+                urljoin(url + '/', v['video']['uuid']), KickVODIE.ie_key(),
+                v['video']['uuid'], v['session_title'])
+            for v in response]
+        return self.playlist_result(entries, channel)
+
+
+class KickChannelClipsIE(KickBaseIE):
+    IE_NAME = 'kick:channel:clips'
+    _VALID_URL = r'https?://(?:www\.)?kick\.com/(?P<id>[\w-]+)/clips'
+    _TESTS = [{
+        'url': 'https://kick.com/xqc/clips',
+        'playlist_mincount': 20,
+        'info_dict': {
+            'id': 'xqc',
+        },
+    }]
+
+    def _real_extract(self, url):
+        channel = self._match_id(url)
+        response = self._call_api(f'v2/channels/{channel}/clips?sort=date&time=all', channel)['clips']
+        entries = [
+            self.url_result(
+                urljoin(url + '/', c['id']), KickClipIE.ie_key(),
+                c['id'], c['title'])
+            for c in response]
+        return self.playlist_result(entries, channel)
